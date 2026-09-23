@@ -114,7 +114,7 @@ def test_contract_and_corpus_checksum() -> None:
         "version": "1.0.0",
         "conformance_format": "sutl-conformance-1.0",
         "corpus_sha256": (
-            "1c1b2f8cb27ec850b1e260f8f49136cb4edf81f50fd168d68225eb5cb1e92dd4"
+            "18be3a8143a7a1aa2d1d25b4167de67475478952ffe622b3369b0d72802e25e4"
         ),
     }
     assert hashlib.sha256(CORPUS_PATH.read_bytes()).hexdigest() == CONTRACT[
