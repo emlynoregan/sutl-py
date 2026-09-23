@@ -9,10 +9,14 @@ from sutl.cli import main
 
 
 def test_public_exports() -> None:
-    assert sutl.__version__ == "1.0.0"
+    assert sutl.__version__ == "1.1.0"
     assert sutl.__all__ == [
+        "LimitError",
+        "Limits",
+        "Program",
         "Runner",
         "__version__",
+        "compile_limited",
         "compilelib",
         "evaluate",
         "truthy",

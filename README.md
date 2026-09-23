@@ -29,6 +29,9 @@ assert result == {"name": "Ada"}
 
 `evaluate(source, transform, library=None)` creates a runner for one
 evaluation. Reuse `Runner().evaluate(...)` when making repeated calls.
+`compile_limited(transform, library, limits)` and `program.run(source)` apply
+host limits (`max_steps`, `max_depth`, and an optional `cancel` callable).
+A result inside the budget is unchanged. Exceeding a limit raises `LimitError`.
 `compilelib(...)` resolves declaration requirements into a transform library.
 `truthy(value)` exposes sUTL truthiness.
 

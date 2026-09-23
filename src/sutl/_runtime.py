@@ -66,20 +66,105 @@ def _path_step(values: MLSNBN, selector: MLSNBN) -> list[MLSNBN]:
     return result
 
 
+class LimitError(Exception):
+    """Raised when evaluation exceeds a host limit or is cancelled."""
+
+    def __init__(self, reason: str) -> None:
+        self.reason = reason
+        super().__init__(f"sUTL evaluation stopped: {reason}")
+
+
+class Limits:
+    """Bounds for one evaluation. Zero means that bound is unset."""
+
+    def __init__(self, max_steps: int = 0, max_depth: int = 0) -> None:
+        if max_steps < 0 or max_depth < 0:
+            raise ValueError("limits must be >= 0")
+        self.max_steps = max_steps
+        self.max_depth = max_depth
+
+
+class _Budget:
+    def __init__(self, limits: Limits | None, cancel: Callable[[], bool] | None) -> None:
+        self.steps = 0
+        self.depth = 0
+        self.max_steps = 0 if limits is None else limits.max_steps
+        self.max_depth = 0 if limits is None else limits.max_depth
+        self.cancel = cancel
+
+
+class Program:
+    """A transform plus the limits applied each time it runs."""
+
+    def __init__(self, transform: MLSNBN, library: dict[str, MLSNBN] | None, limits: Limits) -> None:
+        self.transform = transform
+        self.library = library
+        self.limits = limits
+
+    def run(self, source: MLSNBN, *, cancel: Callable[[], bool] | None = None) -> MLSNBN:
+        return evaluate(source, self.transform, self.library, limits=self.limits, cancel=cancel)
+
+
 class Runner:
     """Evaluate sUTL transforms with an optional transform library."""
 
     def __init__(self) -> None:
         self.builtins: dict[str, Builtin] = self._make_builtins()
+        self._budget: _Budget | None = None
 
     def evaluate(
-        self, source: MLSNBN, transform: MLSNBN, library: dict[str, MLSNBN] | None = None
+        self,
+        source: MLSNBN,
+        transform: MLSNBN,
+        library: dict[str, MLSNBN] | None = None,
+        *,
+        limits: Limits | None = None,
+        cancel: Callable[[], bool] | None = None,
     ) -> MLSNBN:
-        return self._evaluate(
-            source, transform, library or {}, source, transform
+        active = cancel is not None or (
+            limits is not None and (limits.max_steps > 0 or limits.max_depth > 0)
         )
+        previous = self._budget
+        self._budget = _Budget(limits, cancel) if active else None
+        try:
+            return self._evaluate(source, transform, library or {}, source, transform)
+        finally:
+            self._budget = previous
+
+    def _charge(self) -> bool:
+        budget = self._budget
+        if budget is None:
+            return False
+        budget.steps += 1
+        if budget.max_steps and budget.steps > budget.max_steps:
+            raise LimitError("steps")
+        if budget.cancel is not None and budget.cancel():
+            raise LimitError("cancelled")
+        if budget.max_depth and budget.depth >= budget.max_depth:
+            raise LimitError("depth")
+        budget.depth += 1
+        return True
+
+    def _release(self) -> None:
+        if self._budget is not None:
+            self._budget.depth -= 1
 
     def _evaluate(
+        self,
+        scope: MLSNBN,
+        transform: MLSNBN,
+        library: dict[str, MLSNBN],
+        source: MLSNBN,
+        root_transform: MLSNBN,
+    ) -> MLSNBN:
+        charged = self._charge()
+        try:
+            return self._evaluate_unmetered(scope, transform, library, source, root_transform)
+        finally:
+            if charged:
+                self._release()
+
+    def _evaluate_unmetered(
         self,
         scope: MLSNBN,
         transform: MLSNBN,
@@ -123,6 +208,21 @@ class Runner:
         return transform
 
     def _quote(
+        self,
+        scope: MLSNBN,
+        transform: MLSNBN,
+        library: dict[str, MLSNBN],
+        source: MLSNBN,
+        root_transform: MLSNBN,
+    ) -> MLSNBN:
+        charged = self._charge()
+        try:
+            return self._quote_unmetered(scope, transform, library, source, root_transform)
+        finally:
+            if charged:
+                self._release()
+
+    def _quote_unmetered(
         self,
         scope: MLSNBN,
         transform: MLSNBN,
@@ -713,9 +813,23 @@ class Runner:
 
 
 def evaluate(
-    source: MLSNBN, transform: MLSNBN, library: dict[str, MLSNBN] | None = None
+    source: MLSNBN,
+    transform: MLSNBN,
+    library: dict[str, MLSNBN] | None = None,
+    *,
+    limits: Limits | None = None,
+    cancel: Callable[[], bool] | None = None,
 ) -> MLSNBN:
-    return Runner().evaluate(source, transform, library)
+    return Runner().evaluate(source, transform, library, limits=limits, cancel=cancel)
+
+
+def compile_limited(
+    transform: MLSNBN,
+    library: dict[str, MLSNBN] | None = None,
+    limits: Limits | None = None,
+) -> Program:
+    """Prepare a transform that runs under limits."""
+    return Program(transform, library, limits or Limits())
 
 
 def compilelib(
