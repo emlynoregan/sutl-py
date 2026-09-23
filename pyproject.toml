@@ -1,0 +1,51 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sutl-py"
+version = "1.0.0"
+description = "Dependency-free Python implementation of sUTL 1.0"
+readme = "README.md"
+requires-python = ">=3.9"
+license = "Apache-2.0"
+authors = [{ name = "Emlyn O'Regan" }]
+keywords = ["sutl", "transform", "json", "language"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Typing :: Typed",
+]
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/emlynoregan/sutl-py"
+Repository = "https://github.com/emlynoregan/sutl-py"
+Issues = "https://github.com/emlynoregan/sutl-py/issues"
+Specification = "https://github.com/emlynoregan/sutl-language"
+
+[project.optional-dependencies]
+test = ["pytest>=7"]
+build = ["build>=1", "twine>=5"]
+
+[project.scripts]
+sutl = "sutl.cli:main"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+sutl = ["py.typed"]
+
+[tool.pytest.ini_options]
+addopts = "-ra"
+testpaths = ["tests"]
