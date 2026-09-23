@@ -5,32 +5,32 @@ from copy import deepcopy
 from typing import Any, Callable
 
 
-MAS = Any
-Builtin = Callable[[MAS, dict[str, MAS], dict[str, MAS], MAS, MAS], MAS]
+MLSNBN = Any
+Builtin = Callable[[MLSNBN, dict[str, MLSNBN], dict[str, MLSNBN], MLSNBN, MLSNBN], MLSNBN]
 
 
-def is_map(value: MAS) -> bool:
+def is_map(value: MLSNBN) -> bool:
     return isinstance(value, dict)
 
 
-def is_list(value: MAS) -> bool:
+def is_list(value: MLSNBN) -> bool:
     return isinstance(value, list)
 
 
-def is_string(value: MAS) -> bool:
+def is_string(value: MLSNBN) -> bool:
     return isinstance(value, str)
 
 
-def is_number(value: MAS) -> bool:
+def is_number(value: MLSNBN) -> bool:
     return isinstance(value, (int, float)) and not isinstance(value, bool)
 
 
-def truthy(value: MAS) -> bool:
+def truthy(value: MLSNBN) -> bool:
     return bool(value)
 
 
-def _path_step(values: MAS, selector: MAS) -> list[MAS]:
-    result: list[MAS] = []
+def _path_step(values: MLSNBN, selector: MLSNBN) -> list[MLSNBN]:
+    result: list[MLSNBN] = []
     if not is_list(values):
         return result
     if selector is None or selector == "":
@@ -73,20 +73,20 @@ class Runner:
         self.builtins: dict[str, Builtin] = self._make_builtins()
 
     def evaluate(
-        self, source: MAS, transform: MAS, library: dict[str, MAS] | None = None
-    ) -> MAS:
+        self, source: MLSNBN, transform: MLSNBN, library: dict[str, MLSNBN] | None = None
+    ) -> MLSNBN:
         return self._evaluate(
             source, transform, library or {}, source, transform
         )
 
     def _evaluate(
         self,
-        scope: MAS,
-        transform: MAS,
-        library: dict[str, MAS],
-        source: MAS,
-        root_transform: MAS,
-    ) -> MAS:
+        scope: MLSNBN,
+        transform: MLSNBN,
+        library: dict[str, MLSNBN],
+        source: MLSNBN,
+        root_transform: MLSNBN,
+    ) -> MLSNBN:
         if is_map(transform) and "!" in transform:
             return self._evaluate_eval(
                 scope, transform, library, source, root_transform
@@ -124,12 +124,12 @@ class Runner:
 
     def _quote(
         self,
-        scope: MAS,
-        transform: MAS,
-        library: dict[str, MAS],
-        source: MAS,
-        root_transform: MAS,
-    ) -> MAS:
+        scope: MLSNBN,
+        transform: MLSNBN,
+        library: dict[str, MLSNBN],
+        source: MLSNBN,
+        root_transform: MLSNBN,
+    ) -> MLSNBN:
         if is_map(transform) and "''" in transform:
             return self._evaluate(
                 scope, transform["''"], library, source, root_transform
@@ -150,12 +150,12 @@ class Runner:
 
     def _evaluate_map(
         self,
-        scope: MAS,
-        transform: dict[str, MAS],
-        library: dict[str, MAS],
-        source: MAS,
-        root_transform: MAS,
-    ) -> dict[str, MAS]:
+        scope: MLSNBN,
+        transform: dict[str, MLSNBN],
+        library: dict[str, MLSNBN],
+        source: MLSNBN,
+        root_transform: MLSNBN,
+    ) -> dict[str, MLSNBN]:
         return {
             str(key): self._evaluate(
                 scope, value, library, source, root_transform
@@ -166,12 +166,12 @@ class Runner:
 
     def _evaluate_eval(
         self,
-        scope: MAS,
-        transform: dict[str, MAS],
-        library: dict[str, MAS],
-        source: MAS,
-        root_transform: MAS,
-    ) -> MAS:
+        scope: MLSNBN,
+        transform: dict[str, MLSNBN],
+        library: dict[str, MLSNBN],
+        source: MLSNBN,
+        root_transform: MLSNBN,
+    ) -> MLSNBN:
         next_transform = self._evaluate(
             scope, transform["!"], library, source, root_transform
         )
@@ -194,12 +194,12 @@ class Runner:
 
     def _evaluate_eval2(
         self,
-        scope: MAS,
-        transform: dict[str, MAS],
-        library: dict[str, MAS],
-        source: MAS,
-        root_transform: MAS,
-    ) -> MAS:
+        scope: MLSNBN,
+        transform: dict[str, MLSNBN],
+        library: dict[str, MLSNBN],
+        source: MLSNBN,
+        root_transform: MLSNBN,
+    ) -> MLSNBN:
         next_transform = self._evaluate(
             scope, transform["!!"], library, source, root_transform
         )
@@ -224,9 +224,9 @@ class Runner:
             next_scope, next_transform, next_library, source, root_transform
         )
 
-    def _is_compact_builtin(self, transform: MAS) -> bool:
+    def _is_compact_builtin(self, transform: MLSNBN) -> bool:
         if is_string(transform):
-            parts: list[MAS] = transform.split(".")
+            parts: list[MLSNBN] = transform.split(".")
         elif is_list(transform):
             parts = transform
         else:
@@ -241,17 +241,17 @@ class Runner:
 
     def _evaluate_compact(
         self,
-        scope: MAS,
-        transform: str | list[MAS],
-        library: dict[str, MAS],
-        source: MAS,
-        root_transform: MAS,
-    ) -> MAS:
-        parts: list[MAS] = (
+        scope: MLSNBN,
+        transform: str | list[MLSNBN],
+        library: dict[str, MLSNBN],
+        source: MLSNBN,
+        root_transform: MLSNBN,
+    ) -> MLSNBN:
+        parts: list[MLSNBN] = (
             transform.split(".") if is_string(transform) else list(transform)
         )
         if is_string(transform):
-            converted: list[MAS] = []
+            converted: list[MLSNBN] = []
             for part in parts:
                 try:
                     converted.append(int(part))
@@ -273,12 +273,12 @@ class Runner:
 
     def _evaluate_builtin(
         self,
-        scope: MAS,
-        transform: dict[str, MAS],
-        library: dict[str, MAS],
-        source: MAS,
-        root_transform: MAS,
-    ) -> MAS:
+        scope: MLSNBN,
+        transform: dict[str, MLSNBN],
+        library: dict[str, MLSNBN],
+        source: MLSNBN,
+        root_transform: MLSNBN,
+    ) -> MLSNBN:
         arguments = transform.get("args")
         if is_list(arguments):
             if not arguments:
@@ -354,25 +354,25 @@ class Runner:
         return builtin(scope, next_scope, next_library, source, root_transform)
 
     @staticmethod
-    def _flatten(values: list[MAS]) -> list[MAS]:
-        result: list[MAS] = []
+    def _flatten(values: list[MLSNBN]) -> list[MLSNBN]:
+        result: list[MLSNBN] = []
         for value in values:
             result.extend(value if is_list(value) else [value])
         return result
 
     def _make_builtins(self) -> dict[str, Builtin]:
         def binary(
-            left: Callable[[dict[str, MAS]], MAS],
-            right: Callable[[dict[str, MAS]], MAS],
-            operation: Callable[[MAS, MAS], MAS],
+            left: Callable[[dict[str, MLSNBN]], MLSNBN],
+            right: Callable[[dict[str, MLSNBN]], MLSNBN],
+            operation: Callable[[MLSNBN, MLSNBN], MLSNBN],
         ) -> Builtin:
             def run(
-                parent: MAS,
-                scope: dict[str, MAS],
-                library: dict[str, MAS],
-                source: MAS,
-                root: MAS,
-            ) -> MAS:
+                parent: MLSNBN,
+                scope: dict[str, MLSNBN],
+                library: dict[str, MLSNBN],
+                source: MLSNBN,
+                root: MLSNBN,
+            ) -> MLSNBN:
                 try:
                     return operation(left(scope), right(scope))
                 except (ArithmeticError, TypeError, ValueError):
@@ -381,16 +381,16 @@ class Runner:
             return run
 
         def unary(
-            value: Callable[[dict[str, MAS]], MAS],
-            operation: Callable[[MAS], MAS],
+            value: Callable[[dict[str, MLSNBN]], MLSNBN],
+            operation: Callable[[MLSNBN], MLSNBN],
         ) -> Builtin:
             def run(
-                parent: MAS,
-                scope: dict[str, MAS],
-                library: dict[str, MAS],
-                source: MAS,
-                root: MAS,
-            ) -> MAS:
+                parent: MLSNBN,
+                scope: dict[str, MLSNBN],
+                library: dict[str, MLSNBN],
+                source: MLSNBN,
+                root: MLSNBN,
+            ) -> MLSNBN:
                 try:
                     return operation(value(scope))
                 except (ArithmeticError, TypeError, ValueError):
@@ -398,11 +398,11 @@ class Runner:
 
             return run
 
-        def get(scope: dict[str, MAS], key: str, default: MAS) -> MAS:
+        def get(scope: dict[str, MLSNBN], key: str, default: MLSNBN) -> MLSNBN:
             value = scope.get(key)
             return default if value is None else value
 
-        def equal(left: MAS, right: MAS) -> bool:
+        def equal(left: MLSNBN, right: MLSNBN) -> bool:
             compatible = (
                 type(left) is type(right)
                 or (is_number(left) and is_number(right))
@@ -410,7 +410,7 @@ class Runner:
             )
             return compatible and left == right
 
-        def add(left: MAS, right: MAS) -> MAS:
+        def add(left: MLSNBN, right: MLSNBN) -> MLSNBN:
             if (is_number(left) and is_number(right)) or (
                 is_string(left) and is_string(right)
             ):
@@ -418,14 +418,14 @@ class Runner:
             raise TypeError("addition requires two numbers or two strings")
 
         def numeric(
-            left: MAS, right: MAS, operation: Callable[[MAS, MAS], MAS]
-        ) -> MAS:
+            left: MLSNBN, right: MLSNBN, operation: Callable[[MLSNBN, MLSNBN], MLSNBN]
+        ) -> MLSNBN:
             if not is_number(left) or not is_number(right):
                 raise TypeError("numeric operation requires two numbers")
             return operation(left, right)
 
         def compare(
-            left: MAS, right: MAS, operation: Callable[[MAS, MAS], bool]
+            left: MLSNBN, right: MLSNBN, operation: Callable[[MLSNBN, MLSNBN], bool]
         ) -> bool:
             return (
                 is_number(left)
@@ -434,24 +434,24 @@ class Runner:
             )
 
         def if_builtin(
-            parent: MAS,
-            scope: dict[str, MAS],
-            library: dict[str, MAS],
-            source: MAS,
-            root: MAS,
-        ) -> MAS:
+            parent: MLSNBN,
+            scope: dict[str, MLSNBN],
+            library: dict[str, MLSNBN],
+            source: MLSNBN,
+            root: MLSNBN,
+        ) -> MLSNBN:
             branch = "true" if truthy(scope.get("cond")) else "false"
             if branch not in scope:
                 return None
             return self._evaluate(parent, scope[branch], library, source, root)
 
         def reduce_builtin(
-            parent: MAS,
-            scope: dict[str, MAS],
-            library: dict[str, MAS],
-            source: MAS,
-            root: MAS,
-        ) -> MAS:
+            parent: MLSNBN,
+            scope: dict[str, MLSNBN],
+            library: dict[str, MLSNBN],
+            source: MLSNBN,
+            root: MLSNBN,
+        ) -> MLSNBN:
             accumulator = scope.get("accum")
             values = scope.get("list")
             if is_list(values):
@@ -466,14 +466,14 @@ class Runner:
                     )
             return accumulator
 
-        def path(start: MAS) -> Builtin:
+        def path(start: MLSNBN) -> Builtin:
             def run(
-                parent: MAS,
-                scope: dict[str, MAS],
-                library: dict[str, MAS],
-                source: MAS,
-                root: MAS,
-            ) -> list[MAS]:
+                parent: MLSNBN,
+                scope: dict[str, MLSNBN],
+                library: dict[str, MLSNBN],
+                source: MLSNBN,
+                root: MLSNBN,
+            ) -> list[MLSNBN]:
                 left = scope.get("a")
                 right = scope.get("b")
                 if scope.get("notfirst"):
@@ -483,19 +483,19 @@ class Runner:
             return run
 
         def raw_path(
-            parent: MAS,
-            scope: dict[str, MAS],
-            library: dict[str, MAS],
-            source: MAS,
-            root: MAS,
-        ) -> list[MAS]:
+            parent: MLSNBN,
+            scope: dict[str, MLSNBN],
+            library: dict[str, MLSNBN],
+            source: MLSNBN,
+            root: MLSNBN,
+        ) -> list[MLSNBN]:
             left = scope.get("a")
             right = scope.get("b")
             if scope.get("notfirst"):
                 return _path_step(left, right)
             return _path_step([right], None) if left is None else _path_step([left], right)
 
-        def string_value(value: MAS) -> str:
+        def string_value(value: MLSNBN) -> str:
             if is_string(value):
                 return value
             if is_number(value):
@@ -510,7 +510,7 @@ class Runner:
                 return "list"
             return "unknown"
 
-        def number_value(value: MAS) -> MAS:
+        def number_value(value: MLSNBN) -> MLSNBN:
             if is_number(value):
                 return value
             if is_string(value):
@@ -525,7 +525,7 @@ class Runner:
                 return 1 if value else 0
             return 0
 
-        def type_value(value: MAS) -> str:
+        def type_value(value: MLSNBN) -> str:
             if is_map(value):
                 return "map"
             if is_list(value):
@@ -672,7 +672,7 @@ class Runner:
         return builtins
 
     @staticmethod
-    def _process_path(start: MAS, scope: dict[str, MAS]) -> list[MAS]:
+    def _process_path(start: MLSNBN, scope: dict[str, MLSNBN]) -> list[MLSNBN]:
         left = scope.get("a")
         right = scope.get("b")
         if scope.get("notfirst"):
@@ -680,7 +680,7 @@ class Runner:
         return _path_step(_path_step([start], left), right)
 
     @staticmethod
-    def _remove_keys(mapping: MAS, keys: MAS) -> MAS:
+    def _remove_keys(mapping: MLSNBN, keys: MLSNBN) -> MLSNBN:
         if mapping is None:
             return None
         result = deepcopy(mapping)
@@ -689,7 +689,7 @@ class Runner:
         return result
 
     @staticmethod
-    def _make_map(value: MAS) -> MAS:
+    def _make_map(value: MLSNBN) -> MLSNBN:
         if not is_list(value):
             return None
         return {
@@ -699,37 +699,37 @@ class Runner:
         }
 
     @staticmethod
-    def _split(value: MAS, separator: MAS, maximum: MAS) -> MAS:
+    def _split(value: MLSNBN, separator: MLSNBN, maximum: MLSNBN) -> MLSNBN:
         if not value or (maximum and not is_number(maximum)):
             return None
         separator = separator or ","
         return str(value).split(str(separator), int(maximum)) if maximum else str(value).split(str(separator))
 
     @staticmethod
-    def _position(value: MAS, substring: MAS) -> MAS:
+    def _position(value: MLSNBN, substring: MLSNBN) -> MLSNBN:
         if not value or not substring:
             return None
         return str(value).find(str(substring))
 
 
 def evaluate(
-    source: MAS, transform: MAS, library: dict[str, MAS] | None = None
-) -> MAS:
+    source: MLSNBN, transform: MLSNBN, library: dict[str, MLSNBN] | None = None
+) -> MLSNBN:
     return Runner().evaluate(source, transform, library)
 
 
 def compilelib(
-    declarations: list[dict[str, MAS]],
-    distributions: list[list[dict[str, MAS]]],
-    seed: dict[str, MAS] | None = None,
+    declarations: list[dict[str, MLSNBN]],
+    distributions: list[list[dict[str, MLSNBN]]],
+    seed: dict[str, MLSNBN] | None = None,
     test: bool = False,
-) -> dict[str, MAS]:
+) -> dict[str, MLSNBN]:
     """Compile required declaration transforms into a library."""
     runner = Runner()
     result = dict(seed or {})
-    failures: list[MAS] = []
+    failures: list[MLSNBN] = []
 
-    def add_requirements(items: list[dict[str, MAS]]) -> None:
+    def add_requirements(items: list[dict[str, MLSNBN]]) -> None:
         for declaration in items:
             declared_name = declaration.get("name", "")
             for required in declaration.get("requires", []):
@@ -747,7 +747,7 @@ def compilelib(
                 if not candidates:
                     failures.append(f"missing requirement: {required}")
                     continue
-                candidate_failures: list[MAS] = []
+                candidate_failures: list[MLSNBN] = []
                 for candidate in candidates:
                     before = dict(result)
                     add_requirements([candidate])

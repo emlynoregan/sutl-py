@@ -21,7 +21,7 @@ CORPUS = json.loads(CORPUS_PATH.read_text(encoding="utf-8"))
 
 
 def same(left: Any, right: Any) -> bool:
-    """Compare MAS values while keeping booleans distinct from numbers."""
+    """Compare MLSNBN values while keeping booleans distinct from numbers."""
     if isinstance(left, bool) or isinstance(right, bool):
         return type(left) is type(right) and left == right
     if isinstance(left, (int, float)) and isinstance(right, (int, float)):
